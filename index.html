@@ -1,10 +1,214 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh-Hant">
 <head>
   <meta charset="UTF-8">
-  <title>我的網站</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>科技感數字顯示器</title>
+  <style>
+    body {
+      margin: 0;
+      height: 100vh;
+      background: radial-gradient(circle at center, #0f2027, #203a43, #2c5364);
+      color: #00fff7;
+      font-family: 'Orbitron', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    .header {
+      position: absolute;
+      top: 10px;
+      left: 20px;
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: #00fff7;
+    }
+    .number-title {
+      font-size: 1.8rem;
+      font-weight: bold;
+      color: #00fff7;
+      margin-top: 60px;
+      margin-bottom: 10px;
+      letter-spacing: 0.2em;
+      text-shadow: 0 0 8px #00fff7;
+    }
+    .number-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 15px;
+      margin: 80px 20px 20px 20px;
+    }
+    .number-box {
+      font-size: 2rem;
+      background: rgba(0, 255, 247, 0.1);
+      border: 2px solid #00fff7;
+      padding: 20px;
+      border-radius: 12px;
+      text-align: center;
+      box-shadow: 0 0 10px #00fff7;
+    }
+    .button {
+      padding: 15px 30px;
+      font-size: 1.5rem;
+      border: none;
+      background: #00fff7;
+      color: #000;
+      border-radius: 10px;
+      cursor: pointer;
+      box-shadow: 0 0 15px #00fff7;
+      transition: background 0.3s;
+      margin-top: 10px;
+    }
+    .button:hover {
+      background: #00cfc3;
+    }
+    .button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .date {
+      position: absolute;
+      top: 10px;
+      right: 20px;
+      font-size: 1.2rem;
+      color: #fff;
+    }
+    #download-gif {
+      display: none;
+      margin-top: 20px;
+      text-decoration: none;
+    }
+    .loading-text {
+      margin-top: 10px;
+      font-size: 1.2rem;
+      color: #ffffffa0;
+      display: none;
+    }
+  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/gif.js.optimized/dist/gif.js"></script>
 </head>
 <body>
-  <h1>你好，這是我的 GitHub Pages 網站！</h1>
+  <div class="header">石器匠心</div>
+  <div class="date" id="date"></div>
+  <div class="number-title">中獎號碼</div>
+  <div class="number-grid" id="number-container"></div>
+  <button class="button" id="draw-btn">抽獎</button>
+  <div class="loading-text" id="loading-text"></div>
+  <a id="download-gif" class="button" download="lottery.gif">下載抽獎過程GIF</a>
+
+  <script>
+    function updateROCDate() {
+      const now = new Date();
+      const rocYear = now.getFullYear() - 1911;
+      const month = now.getMonth() + 1;
+      const day = now.getDate();
+      document.getElementById('date').textContent = `民國 ${rocYear} 年 ${month} 月 ${day} 日`;
+    }
+    updateROCDate();
+
+    // 相容 Canvas 的 roundRect
+    if (!CanvasRenderingContext2D.prototype.roundRect) {
+      CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
+        this.beginPath();
+        this.moveTo(x + r, y);
+        this.arcTo(x + w, y, x + w, y + h, r);
+        this.arcTo(x + w, y + h, x, y + h, r);
+        this.arcTo(x, y + h, x, y, r);
+        this.arcTo(x, y, x + w, y, r);
+        this.closePath();
+        return this;
+      }
+    }
+
+    document.getElementById('draw-btn').onclick = function () {
+      document.getElementById('draw-btn').disabled = true;
+      document.getElementById('download-gif').style.display = 'none';
+      document.getElementById('loading-text').style.display = 'block';
+
+      // 等字型載入完再開始畫圖
+      document.fonts.ready.then(() => {
+        startDrawing();
+      });
+    };
+
+    function startDrawing() {
+      const fixedNumbers = [41, 36, 67, 74, 69, 98, 85, 75, 38, 68];
+      const container = document.getElementById('number-container');
+      container.innerHTML = '';
+
+      const gridCols = 5;
+      const boxW = 80, boxH = 60, gap = 15;
+      const rows = Math.ceil(fixedNumbers.length / gridCols);
+      const canvasW = gridCols * (boxW + gap) + 20;
+      const canvasH = rows * (boxH + gap) + 40;
+      const canvas = document.createElement('canvas');
+      canvas.width = canvasW;
+      canvas.height = canvasH;
+      const ctx = canvas.getContext('2d');
+
+      const gif = new GIF({
+        workers: 2,
+        quality: 10,
+        width: canvasW,
+        height: canvasH
+      });
+
+      let i = 0;
+
+      function drawStep() {
+        if (i > fixedNumbers.length) {
+          gif.on('finished', function (blob) {
+            const url = URL.createObjectURL(blob);
+            const downloadBtn = document.getElementById('download-gif');
+            downloadBtn.href = url;
+            downloadBtn.style.display = 'inline-block';
+            document.getElementById('draw-btn').disabled = false;
+            document.getElementById('loading-text').style.display = 'none';
+          });
+          gif.render();
+          return;
+        }
+
+        // 顯示在畫面上
+        container.innerHTML = '';
+        for (let j = 0; j < i; j++) {
+          const box = document.createElement('div');
+          box.className = 'number-box';
+          box.textContent = fixedNumbers[j];
+          container.appendChild(box);
+        }
+
+        // Canvas 畫面
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#203a43";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        for (let j = 0; j < i; j++) {
+          const x = (j % gridCols) * (boxW + gap) + 20;
+          const y = Math.floor(j / gridCols) * (boxH + gap) + 20;
+          ctx.strokeStyle = "#00fff7";
+          ctx.lineWidth = 2;
+          ctx.fillStyle = "rgba(0,255,247,0.1)";
+          ctx.beginPath();
+          ctx.roundRect(x, y, boxW, boxH, 12);
+          ctx.fill();
+          ctx.stroke();
+          ctx.font = "2rem Orbitron";
+          ctx.fillStyle = "#00fff7";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillText(fixedNumbers[j], x + boxW / 2, y + boxH / 2);
+        }
+
+        gif.addFrame(ctx, { copy: true, delay: 400 });
+        i++;
+        setTimeout(drawStep, 400);
+      }
+
+      drawStep();
+    }
+  </script>
 </body>
 </html>
