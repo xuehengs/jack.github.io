@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>石器匠心</title>
+  <title>科技感數字顯示器</title>
   <style>
     body {
       margin: 0;
@@ -15,47 +15,51 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      overflow: hidden;
+      overflow-x: hidden;
     }
     .header {
       position: absolute;
       top: 10px;
       left: 20px;
-      font-size: 1.5rem;
+      font-size: 1.2rem;
       font-weight: bold;
       color: #00fff7;
     }
     .number-title {
-      font-size: 1.8rem;
+      font-size: 1.5rem;
       font-weight: bold;
       color: #00fff7;
       margin-top: 60px;
       margin-bottom: 10px;
       letter-spacing: 0.2em;
+      text-align: center;
       text-shadow: 0 0 8px #00fff7;
     }
     .number-grid {
       display: grid;
-      grid-template-columns: repeat(5, 1fr);
-      gap: 15px;
-      margin: 80px 20px 20px 20px;
+      grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+      gap: 10px;
+      padding: 20px;
+      width: 100%;
+      max-width: 500px;
+      box-sizing: border-box;
     }
     .number-box {
-      font-size: 2rem;
+      font-size: 1.2rem;
       background: rgba(0, 255, 247, 0.1);
       border: 2px solid #00fff7;
-      padding: 20px;
-      border-radius: 12px;
+      padding: 15px;
+      border-radius: 10px;
       text-align: center;
       box-shadow: 0 0 10px #00fff7;
     }
     .button {
-      padding: 15px 30px;
-      font-size: 1.5rem;
+      padding: 12px 24px;
+      font-size: 1.2rem;
       border: none;
       background: #00fff7;
       color: #000;
-      border-radius: 10px;
+      border-radius: 8px;
       cursor: pointer;
       box-shadow: 0 0 15px #00fff7;
       transition: background 0.3s;
@@ -72,7 +76,7 @@
       position: absolute;
       top: 10px;
       right: 20px;
-      font-size: 1.2rem;
+      font-size: 1rem;
       color: #fff;
     }
     #download-gif {
@@ -82,9 +86,22 @@
     }
     .loading-text {
       margin-top: 10px;
-      font-size: 1.2rem;
+      font-size: 1rem;
       color: #ffffffa0;
       display: none;
+    }
+    @media (max-width: 480px) {
+      .number-box {
+        font-size: 1rem;
+        padding: 10px;
+      }
+      .button {
+        font-size: 1rem;
+        padding: 10px 20px;
+      }
+      .number-title {
+        font-size: 1.2rem;
+      }
     }
   </style>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap" rel="stylesheet">
@@ -96,7 +113,7 @@
   <div class="number-title">中獎號碼</div>
   <div class="number-grid" id="number-container"></div>
   <button class="button" id="draw-btn">抽獎</button>
-  <div class="loading-text" id="loading-text"></div>
+  <div class="loading-text" id="loading-text">抽獎進行中，請稍候...</div>
   <a id="download-gif" class="button" download="lottery.gif">下載抽獎過程GIF</a>
 
   <script>
@@ -109,7 +126,6 @@
     }
     updateROCDate();
 
-    // 相容 Canvas 的 roundRect
     if (!CanvasRenderingContext2D.prototype.roundRect) {
       CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
         this.beginPath();
@@ -128,14 +144,13 @@
       document.getElementById('download-gif').style.display = 'none';
       document.getElementById('loading-text').style.display = 'block';
 
-      // 等字型載入完再開始畫圖
       document.fonts.ready.then(() => {
         startDrawing();
       });
     };
 
     function startDrawing() {
-      const fixedNumbers = [41, 36, 67, 74, 69, 98, 85, 75, 38, 68];
+      const fixedNumbers = [41, 36, 66, 74, 69, 98, 85, 99, 38, 68];
       const container = document.getElementById('number-container');
       container.innerHTML = '';
 
@@ -172,7 +187,6 @@
           return;
         }
 
-        // 顯示在畫面上
         container.innerHTML = '';
         for (let j = 0; j < i; j++) {
           const box = document.createElement('div');
@@ -181,7 +195,6 @@
           container.appendChild(box);
         }
 
-        // Canvas 畫面
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.fillStyle = "#203a43";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
