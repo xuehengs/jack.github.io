@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>龍泉寶劍匠心</title>
+  <style>
+    body {
+      margin: 0;
+      height: 100vh;
+      background: radial-gradient(circle at center, #0f2027, #203a43, #2c5364);
+      color: #00fff7;
+      font-family: 'Orbitron', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow-x: hidden;
+    }
+    .header {
+      position: absolute;
+      top: 10px;
+      left: 20px;
+      font-size: 1.2rem;
+      font-weight: bold;
+      color: #00fff7;
+    }
+    .number-title {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: #00fff7;
+      margin-top: 60px;
+      margin-bottom: 10px;
+      letter-spacing: 0.2em;
+      text-align: center;
+      text-shadow: 0 0 8px #00fff7;
+    }
+    .number-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+      gap: 10px;
+      padding: 20px;
+      width: 100%;
+      max-width: 500px;
+      box-sizing: border-box;
+    }
+    .number-box {
+      font-size: 1.2rem;
+      background: rgba(0, 255, 247, 0.1);
+      border: 2px solid #00fff7;
+      padding: 15px;
+      border-radius: 10px;
+      text-align: center;
+      box-shadow: 0 0 10px #00fff7;
+    }
+    .button {
+      padding: 12px 24px;
+      font-size: 1.2rem;
+      border: none;
+      background: #00fff7;
+      color: #000;
+      border-radius: 8px;
+      cursor: pointer;
+      box-shadow: 0 0 15px #00fff7;
+      transition: background 0.3s;
+      margin-top: 10px;
+    }
+    .button:hover {
+      background: #00cfc3;
+    }
+    .button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .date {
+      position: absolute;
+      top: 10px;
+      right: 20px;
+      font-size: 1rem;
+      color: #fff;
+    }
+    #download-gif {
+      display: none;
+      margin-top: 20px;
+      text-decoration: none;
+    }
+    .loading-text {
+      margin-top: 10px;
+      font-size: 1rem;
+      color: #ffffffa0;
+      display: none;
+    }
+    @media (max-width: 480px) {
+      .number-box {
+        font-size: 1rem;
+        padding: 10px;
+      }
+      .button {
+        font-size: 1rem;
+        padding: 10px 20px;
+      }
+      .number-title {
+        font-size: 1.2rem;
+      }
+    }
+  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/gif.js.optimized/dist/gif.js"></script>
+</head>
+<body>
+  <div class="header">龍泉寶劍匠心</div>
+  <div class="date" id="date"></div>
+  <div class="number-title">中獎號碼</div>
+  <div class="number-grid" id="number-container"></div>
+  <button class="button" id="draw-btn">抽獎</button>
+  <div class="loading-text" id="loading-text">抽獎進行中，請稍候...</div>
+  <a id="download-gif" class="button" download="lottery.gif">下載抽獎過程GIF</a>
+
+  <script>
+    function updateROCDate() {
+      const now = new Date();
+      const rocYear = now.getFullYear() - 1911;
+      const month = now.getMonth() + 1;
+      const day = now.getDate();
+      document.getElementById('date').textContent = `民國 ${rocYear} 年 ${month} 月 ${day} 日`;
+    }
+    updateROCDate();
+
+    if (!CanvasRenderingContext2D.prototype.roundRect) {
+      CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
+        this.beginPath();
+        this.moveTo(x + r, y);
+        this.arcTo(x + w, y, x + w, y + h, r);
+        this.arcTo(x + w, y + h, x, y + h, r);
+        this.arcTo(x, y + h, x, y, r);
+        this.arcTo(x, y, x + w, y, r);
+        this.closePath();
+        return this;
+      }
+    }
+
+    document.getElementById('draw-btn').onclick = function () {
+      document.getElementById('draw-btn').disabled = true;
+      document.getElementById('download-gif').style.display = 'none';
+      document.getElementById('loading-text').style.display = 'block';
+
+      document.fonts.ready.then(() => {
+        startDrawing();
+      });
+    };
+
+    function startDrawing() {
+      const fixedNumbers = [41, 36, 66, 84, 69, 98, 25, 99, 38, 68];
+      const container = document.getElementById('number-container');
+      container.innerHTML = '';
+
+      const gridCols = 5;
+      const boxW = 80, boxH = 60, gap = 15;
+      const rows = Math.ceil(fixedNumbers.length / gridCols);
+      const canvasW = gridCols * (boxW + gap) + 20;
+      const canvasH = rows * (boxH + gap) + 40;
+      const canvas = document.createElement('canvas');
+      canvas.width = canvasW;
+      canvas.height = canvasH;
+      const ctx = canvas.getContext('2d');
+
+      const gif = new GIF({
+        workers: 2,
+        quality: 10,
+        width: canvasW,
+        height: canvasH
+      });
+
+      let i = 0;
+
+      function drawStep() {
+        if (i > fixedNumbers.length) {
+          gif.on('finished', function (blob) {
+            const url = URL.createObjectURL(blob);
+            const downloadBtn = document.getElementById('download-gif');
+            downloadBtn.href = url;
+            downloadBtn.style.display = 'inline-block';
+            document.getElementById('draw-btn').disabled = false;
+            document.getElementById('loading-text').style.display = 'none';
+          });
+          gif.render();
+          return;
+        }
+
+        container.innerHTML = '';
+        for (let j = 0; j < i; j++) {
+          const box = document.createElement('div');
+          box.className = 'number-box';
+          box.textContent = fixedNumbers[j];
+          container.appendChild(box);
+        }
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#203a43";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        for (let j = 0; j < i; j++) {
+          const x = (j % gridCols) * (boxW + gap) + 20;
+          const y = Math.floor(j / gridCols) * (boxH + gap) + 20;
+          ctx.strokeStyle = "#00fff7";
+          ctx.lineWidth = 2;
+          ctx.fillStyle = "rgba(0,255,247,0.1)";
+          ctx.beginPath();
+          ctx.roundRect(x, y, boxW, boxH, 12);
+          ctx.fill();
+          ctx.stroke();
+          ctx.font = "2rem Orbitron";
+          ctx.fillStyle = "#00fff7";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillText(fixedNumbers[j], x + boxW / 2, y + boxH / 2);
+        }
+
+        gif.addFrame(ctx, { copy: true, delay: 400 });
+        i++;
+        setTimeout(drawStep, 400);
+      }
+
+      drawStep();
+    }
+  </script>
+</body>
+</html>
